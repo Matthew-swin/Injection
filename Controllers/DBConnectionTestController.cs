@@ -36,8 +36,33 @@ namespace DBConnExample.Controllers
         public List<Customer> GetCustomer(string searchString) {
             List<Customer> customers = new List<Customer>();
 
-            // code goes here       
+            SqlConnection conn = new SqlConnection(this.connectionString);
 
+            string queryString = "Select * From Customer WHERE LastName =  @ID;";
+
+            SqlCommand command = new SqlCommand(queryString, conn);
+            command.Parameters.AddWithValue("@ID", searchString);
+            try
+            {
+                conn.Open();
+
+                string result = "";
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        result += reader[0].ToString() + reader[1].ToString() + reader[2].ToString() + "\n";
+
+                        // ORM - Object Relation Mapping
+                        customers.Add(
+                            new Customer() { Id = (int)reader[0], FirstName = reader[1].ToString(), Surname = reader[2].ToString() });
+                    }
+                }
+            }
+            catch (System.InvalidCastException ex)
+            {
+                throw new System.InvalidCastException("you did something dodgy", ex);
+            }
             return customers;
         }
 
