@@ -10,12 +10,13 @@ namespace DBConnExample.Controllers
     [Route("[controller]")]
     public class InjectionController
     {
-         //string connectionString = @"Data Source=bikestoresdb.c3raologixkl.us-east-1.rds.amazonaws.com;Initial Catalog=SampleDB;User ID=admin;Password=abcd1234";
+        //string connectionString = @"Data Source=bikestoresdb.c3raologixkl.us-east-1.rds.amazonaws.com;Initial Catalog=SampleDB;User ID=admin;Password=abcd1234";
         SqlConnectionStringBuilder stringBuilder = new SqlConnectionStringBuilder();
         IConfiguration configuration;
         string connectionString = "";
 
-        public InjectionController(IConfiguration iConfig) {
+        public InjectionController(IConfiguration iConfig)
+        {
             this.configuration = iConfig;
 
             // use configuration to retrieve connection string from appsettings.json
@@ -32,30 +33,37 @@ namespace DBConnExample.Controllers
         }
 
         [HttpGet("{searchString}")]
-        public List<Customer> GetCustomer(string searchString) {
+        public List<Customer> GetCustomer(string searchString)
+        {
             List<Customer> customers = new List<Customer>();
 
             SqlConnection conn = new SqlConnection(this.connectionString);
 
-            string queryString = "Select * From Customer WHERE LastName = '" + searchString + "'";
+            string queryString = "Select * From Customer WHERE LastName =  @ID;";
 
             SqlCommand command = new SqlCommand(queryString, conn);
-
-            conn.Open();
-        
-            string result = "";
-            using(SqlDataReader reader = command.ExecuteReader())
+            command.Parameters.AddWithValue("@ID", searchString);
+            try
             {
-                while (reader.Read())
+                conn.Open();
+
+                string result = "";
+                using (SqlDataReader reader = command.ExecuteReader())
                 {
-                    result += reader[0].ToString() + reader[1].ToString() + reader[2].ToString() + "\n";
-                    
-                    // ORM - Object Relation Mapping
-                    customers.Add(
-                        new Customer() { Id = (int)reader[0], FirstName = reader[1].ToString(), Surname = reader[2].ToString()});                
+                    while (reader.Read())
+                    {
+                        result += reader[0].ToString() + reader[1].ToString() + reader[2].ToString() + "\n";
+
+                        // ORM - Object Relation Mapping
+                        customers.Add(
+                            new Customer() { Id = (int)reader[0], FirstName = reader[1].ToString(), Surname = reader[2].ToString() });
+                    }
                 }
             }
-
+            catch (System.InvalidCastException ex)
+            {
+                throw new System.InvalidCastException("you did something dodgy", ex);
+            }
             return customers;
         }
     }
